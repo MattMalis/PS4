@@ -84,43 +84,41 @@ table$Percent_Margin
 ## get rid of the ugly version...
 table<-table[,-(which(names(table)=="Pop_Vote_%_Margin"))]
 
+table$Raw_Margin<-NULL
 
 ## now, let's do the same for Winner_Pop_Vote_Margin
-## first deal with negative values (first four rows), same as before:
+
+## get rid of the commas for all values:
+table$Raw_Margin<-sapply(table$Winner_Pop_Vote_Margin, 
+                         function(x) x<-gsub(",","",x) )
+
+##  now deal with negative values (first four rows), same as before:
 for (i in 1:4){
-  table$Raw_Margin[i]<-strsplit(table$Winner_Pop_Vote_Margin[[i]], split="−")
+  table$Raw_Margin[i]<-strsplit(table$Raw_Margin[[i]], split="−")
   table$Raw_Margin[i]<-paste0("-", table$Raw_Margin[[i]][2])
 }
 
-#from the 4th row to end: all values are duplicated figures, with some commas...
-(table$Winner_Pop_Vote_Margin)
-## get rid of the commas:
-table$Raw_Margin[5:nrow(table)]<-sapply(table$Winner_Pop_Vote_Margin[5:nrow(table)], 
-                                        function(x) x<-gsub(",","",x) )
 ## unlist:
 table$Raw_Margin<-unlist(table$Raw_Margin)
 
-#### SKIP THIS STEP FOR NOW
-##get rid of zeros
-table$Raw_Margin_Test<-lapply(table$Raw_Margin, function(x){
-  if (substr(x,1,1) == "0"){
-    x<-substr(x,2,nchar(x))
-  }
-})
-?apply
-### what went wrong here?
-
-#halfChars<-function(x) substring(x, 1, ceiling((nchar(x))/2))
+#from the 5th row to end: all values are duplicated figures...
 
 
+## character to numeric - drop the zeros
+table$Raw_Margin<-as.numeric(table$Raw_Margin)
 
-## NOTE: won't be able to use Winner_Pop_Vote_Margin... 
-##  ...separate figures are mashed together and inseparable
+## now back to character
+table$Raw_Margin<-as.character(table$Raw_Margin)
+
+nchar(table$Raw_Margin) ## all values from 5th row to end are duplicated exactly twice...
+## use halfChars function from earlier, starting at 5th row
+table$Raw_Margin[5:nrow(table)]<-sapply(table$Raw_Margin[5:nrow(table)], halfChars)
+
 
 ## let's make sure all variables are the right class...
 str(table)
 ## remove the '%' and ',' from numeric veriables (manually selected), then cast as numeric
-table[,c(1,5,6,10,11)]<- apply(table[,c(1,5,6,10,11)], 2, function(x){
+table[,c(1,5,6,10,11,12)]<- apply(table[,c(1,5,6,10,11,12)], 2, function(x){
   x<-gsub("%", "", x)
   x<-gsub(",", "", x)
 x<-as.numeric(as.character(x))})
@@ -131,13 +129,13 @@ str(table)
 
 ## Plot 1: percent margin of popular vote over time, points marked by party
 
+par(mar=c(5,5,3,2))
 plot(NULL, 
      xlim=c(min(table$Year_Elected-1),max(table$Year_Elected+1)) ,
      ylim=c(min(table$Percent_Margin-1),max(table$Percent_Margin+1)) ,
      main = "Percent Margin of Popular Vote",
-     xlab = "Percent Margin",
-     ylab = "Year Elected"
-     
+     xlab = "Year Elected",
+     ylab = "Percent Margin"
      )
 points(table$Percent_Margin[table$Winner_Party=="Whig"]~table$Year_Elected[table$Winner_Party=="Whig"], pch="W", col="green")
 points(table$Percent_Margin[table$Winner_Party=="Dem."]~table$Year_Elected[table$Winner_Party=="Dem."], pch="D", col="blue")
@@ -151,7 +149,8 @@ abline(v=c(seq(1840,2000,20)), lty=2, col="gray")
 legend("bottomright",
        legend=c("Democrat", "Republican", "Whig", "Democrat-Republican"), 
        pch=c("D","R","W","X"),
-       col=c("blue", "red","green","black")
+       col=c("blue", "red","green","black"),
+       cex=.8
 )
 
 
