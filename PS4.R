@@ -102,11 +102,12 @@ table$Raw_Margin<-unlist(table$Raw_Margin)
 
 #### SKIP THIS STEP FOR NOW
 ##get rid of zeros
-table$Raw_Margin<-sapply(table$Raw_Margin, function(x){
+table$Raw_Margin_Test<-lapply(table$Raw_Margin, function(x){
   if (substr(x,1,1) == "0"){
     x<-substr(x,2,nchar(x))
   }
 })
+?apply
 ### what went wrong here?
 
 #halfChars<-function(x) substring(x, 1, ceiling((nchar(x))/2))
@@ -150,10 +151,44 @@ abline(v=c(seq(1840,2000,20)), lty=2, col="gray")
 legend("bottomright",
        legend=c("Democrat", "Republican", "Whig", "Democrat-Republican"), 
        pch=c("D","R","W","X"),
-       col=c("blue", "red","green","black"),
+       col=c("blue", "red","green","black")
 )
 
-##
+
+### Plot 2: Closest Runners-Up
+
+
+runnersUp<-t(cbind(table[,5], table[,5]-table[,11]))
+colnames(runnersUp)<-(table$Runner_Up)  
+runnersUp<-rbind(runnersUp, table$Year_Elected)
+rownames(runnersUp)<-c("Runner Up's %", "Winner's %", "")
+
+par(mar=c(3,8,2,3))
+barplot(runnersUp[1:2,10:1], beside=T, names.arg=c(table$Runner_Up[10:1]), 
+        horiz=T, cex.names=.6, las=2,
+        main="Just missed it...",
+        xlim = c(0,65)
+        
+        #ylim=c(0,40),
+        #ylab = "Runner Up",
+        #legend=T
+)
+legend(x=52, y=32, legend = c("Runner-Up's \n Pop Vote %", "Winner's \n Pop Vote %"),
+       fill= c("gainsboro", "dimgray"), cex=.5, y.intersp=2, bty='n')
+
+## Plot 3: turnout and party success
+
+#plot(table$Year_Elected[table$Winner_Party=='Dem.'], table$Turnout[table$Winner_Party=='Dem.'], col="blue")
+#points(table$Year_Elected[table$Winner_Party=='Rep.'], table$Turnout[table$Winner_Party=='Rep.'], col="red")
+
+
+plot(density(table$Turnout[table$Winner_Party=='Dem.']), col="blue")
+lines(density(table$Turnout[table$Winner_Party=='Rep.']), col="red")
+rug(table$Turnout[table$Winner_Party=='Dem.'], lwd=2, col="blue")
+rug((table$Turnout[table$Winner_Party=='Rep.']), lwd=2, col="red")
+
+
+## Plot 3: regression discontinuity...
 
 table$pre15<-table$Year_Elected<1869
 table$pre15[1]<-F ## 1824 was extreme outlier, excluding from this plot
@@ -161,16 +196,45 @@ table$pre19<-table$Year_Elected>1869 & table$Year_Elected<1919
 table$post19<-table$Year_Elected>1919
 
 plot(table$Turnout[-1]~table$Year_Elected[-1])
-abline(lm(table$Turnout[table$pre15==T]~table$Year_Elected[table$pre15==T]),lty=2)
+abline(lm(table$Turnout[table$pre15==T]~table$Year_Elected[table$pre15==T]),lty=2)$coefficients
 abline(lm(table$Turnout[table$pre19==T]~table$Year_Elected[table$pre19==T]),lty=2)
 abline(lm(table$Turnout[table$post19==T]~table$Year_Elected[table$post19==T]),lty=2)
 
 table$Turnout
 
+?abline
 
 
 
 lines(table$Turnout, table$Year_Elected)
 
 
-### BARPLOT OF WINNINGEST PRESIDENTS
+
+?legend
+?legend
+?barplot
+
+## how to get Runner_Up name and election year combined in row names, on different lines? /n not working
+## x-axis name not running over Runner Up names...
+## move main out of the way - put main and legend on same line...
+## adjust settings for legend within the plot function...
+
+?
+for (i in 1:nrow(table)){
+  runnerUpYear[i]<-paste(table$Runner_Up[i],  "/n", table$Year_Elected[i])
+}
+warnings()
+runnerUpYear<-NULL
+
+
+
+
+?barplot
+### GROUP BY YEAR???
+### names.arg? axis names?
+### turn axis names sideways
+
+class(table[,11])
+
+names(table)
+?barplot
