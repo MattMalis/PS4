@@ -1,6 +1,10 @@
 getwd()
+setwd("/Users/iramalis/Desktop/4625/wd")
 
 library(plyr)
+## use package html table, instead of rvest?
+
+#library(htmltab)
 
 library(rvest)    
 wikiURL <- 'https://en.wikipedia.org/wiki/List_of_United_States_presidential_elections_by_popular_vote_margin'
@@ -77,12 +81,44 @@ table$Percent_Margin<-unlist(table$Percent_Margin)
 
 ## now we have a clean Percent_Margin variable
 table$Percent_Margin
+## get rid of the ugly version...
 table<-table[,-(which(names(table)=="Pop_Vote_%_Margin"))]
 
-## NOTE: won't be able to use Winner_Pop_Vote_Margin
+
+## now, let's do the same for Winner_Pop_Vote_Margin
+## first deal with negative values (first four rows), same as before:
+for (i in 1:4){
+  table$Raw_Margin[i]<-strsplit(table$Winner_Pop_Vote_Margin[[i]], split="−")
+  table$Raw_Margin[i]<-paste0("-", table$Raw_Margin[[i]][2])
+}
+
+#from the 4th row to end: all values are duplicated figures, with some commas...
+(table$Winner_Pop_Vote_Margin)
+## get rid of the commas:
+table$Raw_Margin[5:nrow(table)]<-sapply(table$Winner_Pop_Vote_Margin[5:nrow(table)], 
+                                        function(x) x<-gsub(",","",x) )
+## unlist:
+table$Raw_Margin<-unlist(table$Raw_Margin)
+
+#### SKIP THIS STEP FOR NOW
+##get rid of zeros
+table$Raw_Margin<-sapply(table$Raw_Margin, function(x){
+  if (substr(x,1,1) == "0"){
+    x<-substr(x,2,nchar(x))
+  }
+})
+### what went wrong here?
+
+#halfChars<-function(x) substring(x, 1, ceiling((nchar(x))/2))
+
+
+
+## NOTE: won't be able to use Winner_Pop_Vote_Margin... 
+##  ...separate figures are mashed together and inseparable
 
 ## let's make sure all variables are the right class...
 str(table)
+## remove the '%' and ',' from numeric veriables (manually selected), then cast as numeric
 table[,c(1,5,6,10,11)]<- apply(table[,c(1,5,6,10,11)], 2, function(x){
   x<-gsub("%", "", x)
   x<-gsub(",", "", x)
@@ -92,4 +128,49 @@ str(table)
 
 ###### VISUALIZING #########
 
+## Plot 1: percent margin of popular vote over time, points marked by party
 
+plot(NULL, 
+     xlim=c(min(table$Year_Elected-1),max(table$Year_Elected+1)) ,
+     ylim=c(min(table$Percent_Margin-1),max(table$Percent_Margin+1)) ,
+     main = "Percent Margin of Popular Vote",
+     xlab = "Percent Margin",
+     ylab = "Year Elected"
+     
+     )
+points(table$Percent_Margin[table$Winner_Party=="Whig"]~table$Year_Elected[table$Winner_Party=="Whig"], pch="W", col="green")
+points(table$Percent_Margin[table$Winner_Party=="Dem."]~table$Year_Elected[table$Winner_Party=="Dem."], pch="D", col="blue")
+points(table$Percent_Margin[table$Winner_Party=="Rep."]~table$Year_Elected[table$Winner_Party=="Rep."], pch="R", col="red")
+points(table$Percent_Margin[table$Winner_Party=="D.-R."]~table$Year_Elected[table$Winner_Party=="D.-R."], pch="X")
+
+
+abline(h=0, lty=3)
+abline(v=c(seq(1840,2000,20)), lty=2, col="gray")
+
+legend("bottomright",
+       legend=c("Democrat", "Republican", "Whig", "Democrat-Republican"), 
+       pch=c("D","R","W","X"),
+       col=c("blue", "red","green","black"),
+)
+
+##
+
+table$pre15<-table$Year_Elected<1869
+table$pre15[1]<-F ## 1824 was extreme outlier, excluding from this plot
+table$pre19<-table$Year_Elected>1869 & table$Year_Elected<1919
+table$post19<-table$Year_Elected>1919
+
+plot(table$Turnout[-1]~table$Year_Elected[-1])
+abline(lm(table$Turnout[table$pre15==T]~table$Year_Elected[table$pre15==T]),lty=2)
+abline(lm(table$Turnout[table$pre19==T]~table$Year_Elected[table$pre19==T]),lty=2)
+abline(lm(table$Turnout[table$post19==T]~table$Year_Elected[table$post19==T]),lty=2)
+
+table$Turnout
+
+
+
+
+lines(table$Turnout, table$Year_Elected)
+
+
+### BARPLOT OF WINNINGEST PRESIDENTS
