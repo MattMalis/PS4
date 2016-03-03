@@ -165,7 +165,7 @@ rownames(runnersUp)<-c("Runner Up's %", "Winner's %", "")
 par(mar=c(3,8,2,3))
 
 barplot(runnersUp[1:2,10:1], beside=T, names.arg=c(table$Runner_Up[10:1]), 
-        horiz=T, cex.names=.6, las=2,
+        horiz=T, cex.names=.5, las=2,
         main="Closest Runners-Up",
         xlim = c(0,65)
 )
@@ -176,7 +176,7 @@ legend(x=52, y=32, legend = c("Runner-Up's \n Pop Vote %", "Winner's \n Pop Vote
 
 
 ## Plot 3: Regression Discontinuity
-##  before and after 15th and 19th amendment, in 1869 and 1919, respectively
+##  boter turnout before and after 15th and 19th amendment (in 1869 and 1919, respectively)
 
 table$pre15<-table$Year_Elected<1869
 table$pre15[1]<-F ## 1824 was extreme outlier, excluding from this plot
@@ -219,6 +219,7 @@ segments(x1,y1,x2,y2a,lty=6, col="cadetblue", lwd=2)
 segments(x2,y2b, x3, y3a, lty=6, col="chocolate", lwd=2)
 segments(x3, y3b, x4, y4, lty=6, col="goldenrod", lwd=2)
 
+## vertical lines to show break points
 abline(v=x2, col="purple", lty=3, lwd = 2)
 abline(v=x3, col="green", lty=3, lwd = 2)
 
