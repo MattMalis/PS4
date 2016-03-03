@@ -156,84 +156,80 @@ legend("bottomright",
 
 ### Plot 2: Closest Runners-Up
 
-
-runnersUp<-t(cbind(table[,5], table[,5]-table[,11]))
+## new matrix of winners' and runner-ups' pop vote %
+runnersUp<-t(cbind(table[,5], table[,5]-table[,11])) 
 colnames(runnersUp)<-(table$Runner_Up)  
-runnersUp<-rbind(runnersUp, table$Year_Elected)
+runnersUp<-rbind(runnersUp, table$Year_Elected) ## including year in the matrix
 rownames(runnersUp)<-c("Runner Up's %", "Winner's %", "")
 
 par(mar=c(3,8,2,3))
+
 barplot(runnersUp[1:2,10:1], beside=T, names.arg=c(table$Runner_Up[10:1]), 
         horiz=T, cex.names=.6, las=2,
-        main="Just missed it...",
+        main="Closest Runners-Up",
         xlim = c(0,65)
-        
-        #ylim=c(0,40),
-        #ylab = "Runner Up",
-        #legend=T
 )
 legend(x=52, y=32, legend = c("Runner-Up's \n Pop Vote %", "Winner's \n Pop Vote %"),
        fill= c("gainsboro", "dimgray"), cex=.5, y.intersp=2, bty='n')
 
-## Plot 3: turnout and party success
-
-#plot(table$Year_Elected[table$Winner_Party=='Dem.'], table$Turnout[table$Winner_Party=='Dem.'], col="blue")
-#points(table$Year_Elected[table$Winner_Party=='Rep.'], table$Turnout[table$Winner_Party=='Rep.'], col="red")
 
 
-plot(density(table$Turnout[table$Winner_Party=='Dem.']), col="blue")
-lines(density(table$Turnout[table$Winner_Party=='Rep.']), col="red")
-rug(table$Turnout[table$Winner_Party=='Dem.'], lwd=2, col="blue")
-rug((table$Turnout[table$Winner_Party=='Rep.']), lwd=2, col="red")
 
-
-## Plot 3: regression discontinuity...
+## Plot 3: Regression Discontinuity
+##  before and after 15th and 19th amendment, in 1869 and 1919, respectively
 
 table$pre15<-table$Year_Elected<1869
 table$pre15[1]<-F ## 1824 was extreme outlier, excluding from this plot
 table$pre19<-table$Year_Elected>1869 & table$Year_Elected<1919
 table$post19<-table$Year_Elected>1919
 
-plot(table$Turnout[-1]~table$Year_Elected[-1])
-abline(lm(table$Turnout[table$pre15==T]~table$Year_Elected[table$pre15==T]),lty=2)$coefficients
-abline(lm(table$Turnout[table$pre19==T]~table$Year_Elected[table$pre19==T]),lty=2)
-abline(lm(table$Turnout[table$post19==T]~table$Year_Elected[table$post19==T]),lty=2)
+## regressions over spans of time...
+model1<- lm(table$Turnout[table$pre15==T]~table$Year_Elected[table$pre15==T])
+model2<- lm(table$Turnout[table$pre19==T]~table$Year_Elected[table$pre19==T])
+model3<- lm(table$Turnout[table$post19==T]~table$Year_Elected[table$post19==T])
 
-table$Turnout
+coeffs<-rbind(coefficients(model1), coefficients(model2), coefficients(model3))
 
-?abline
+## years of discontinuity points
+x1<-1828
+x2<-1872
+x3<-1920
+x4<-2012 
 
+## predicted y values, by different regression models
+## pre-15 model:
+y1<-(coeffs[1,1] + x1*coeffs[1,2])
+y2a<-(coeffs[1,1] + x2*coeffs[1,2])
+#between 15-19 model
+y2b<-(coeffs[2,1] + x2*coeffs[2,2])
+y3a<-(coeffs[2,1] + x3*coeffs[2,2])
+#post-19 model
+y3b<-(coeffs[3,1] + x3*coeffs[3,2])
+y4<-(coeffs[3,1] + x4*coeffs[3,2])
 
-
-lines(table$Turnout, table$Year_Elected)
-
-
-
-?legend
-?legend
-?barplot
-
-## how to get Runner_Up name and election year combined in row names, on different lines? /n not working
-## x-axis name not running over Runner Up names...
-## move main out of the way - put main and legend on same line...
-## adjust settings for legend within the plot function...
-
-?
-for (i in 1:nrow(table)){
-  runnerUpYear[i]<-paste(table$Runner_Up[i],  "/n", table$Year_Elected[i])
-}
-warnings()
-runnerUpYear<-NULL
-
-
+#plotting points, excluding 1824 (outlier)
+par(mar=c(5,5,5,5))
+plot(table$Turnout[-1]~table$Year_Elected[-1],
+     ylab = "Percent Turnout",
+     xlab = "Election Year",
+     main="Voter Turnout Before and After \n 15th and 19th Amendments")
 
 
-?barplot
-### GROUP BY YEAR???
-### names.arg? axis names?
-### turn axis names sideways
+segments(x1,y1,x2,y2a,lty=6, col="cadetblue", lwd=2)
+segments(x2,y2b, x3, y3a, lty=6, col="chocolate", lwd=2)
+segments(x3, y3b, x4, y4, lty=6, col="goldenrod", lwd=2)
 
-class(table[,11])
+abline(v=x2, col="purple", lty=3, lwd = 2)
+abline(v=x3, col="green", lty=3, lwd = 2)
 
-names(table)
-?barplot
+legend("topright", legend=c(
+  "First election after 15th amendement",
+  "First election after 19th amendment",
+  "Prediction from pre-15th data",
+  "Prediction from 15th-19th data",
+  "Prediction from post-19th data"),
+  lty = c( 3, 3, 6, 6, 6),
+  lwd=c(3, 3, 3, 3, 3),
+  col = c("purple", "green", "cadetblue", "chocolate", "goldenrod"),
+  cex=.7
+)
